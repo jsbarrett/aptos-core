@@ -8,7 +8,7 @@ use crate::{
     GenesisInfo,
 };
 use anyhow::ensure;
-use aptos_config::config::RocksDbStorageConfig;
+use aptos_config::config::OnDiskStorageConfig;
 use aptos_config::keys::ConfigKey;
 use aptos_config::{
     config::{
@@ -551,10 +551,10 @@ impl Builder {
         // Ensure safety rules runs in a thread
         config.consensus.safety_rules.service = SafetyRulesService::Thread;
 
-        // Use a rocksdb storage backend for safety rules
-        let mut storage = RocksDbStorageConfig::default();
+        // Use a on disk storage backend for safety rules
+        let mut storage = OnDiskStorageConfig::default();
         storage.set_data_dir(validator.dir.clone());
-        config.consensus.safety_rules.backend = SecureBackend::RocksDbStorage(storage);
+        config.consensus.safety_rules.backend = SecureBackend::OnDiskStorage(storage);
 
         if index > 0 || self.randomize_first_validator_ports {
             config.randomize_ports();
