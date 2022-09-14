@@ -5,6 +5,7 @@ use crate::{
     block_storage::BlockReader, state_replication::PayloadManager, util::time_service::TimeService,
 };
 use anyhow::{bail, ensure, format_err, Context};
+use aptos_logger::warn;
 use consensus_types::{
     block::Block,
     block_data::BlockData,
@@ -167,6 +168,27 @@ impl ProposalGenerator {
                 )
                 .await
                 .context("Fail to retrieve payload")?;
+
+            if let Payload::DirectMempool(batch) = &payload {
+                let block_timestamp = timestamp.as_micros() as u64;
+                let expired_txns = batch
+                    .txns
+                    .iter()
+                    .map(|txn| txn.expiration_timestamp_secs() * 1_000_000)
+                    .filter(|ts| *ts <= block_timestamp)
+                    .collect::<Vec<_>>();
+                if expired_txns.is_empty() {
+                    warn!("No expired txns {}", batch.txns.len());
+                } else {
+                    warn!(
+                        "Expired txns: {} out of {}, block ts: {}, txn ts: {:?}",
+                        expired_txns.len(),
+                        batch.txns.len(),
+                        block_timestamp,
+                        &expired_txns[..std::cmp::min(expired_txns.len(), 10)]
+                    );
+                }
+            }
 
             (payload, timestamp.as_micros() as u64)
         };
