@@ -425,6 +425,10 @@ impl BlockTree {
             .expect("Inconsistent commit proof and evaluation decision, cannot commit block");
 
         let block_to_commit = blocks_to_commit.last().unwrap().clone();
+        // if the block doesn't exist anymore i.e. the block tree has been rebuilt, just ignore the callback.
+        if !self.block_exists(&block_to_commit.id()) {
+            return;
+        }
         update_counters_for_committed_blocks(blocks_to_commit);
         let current_round = self.commit_root().round();
         let committed_round = block_to_commit.round();
